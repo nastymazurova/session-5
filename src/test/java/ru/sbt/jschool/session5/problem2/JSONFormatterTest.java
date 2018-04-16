@@ -14,6 +14,11 @@ public class JSONFormatterTest {
 
         try {
             assertEquals("{\n" +
+                    "    \"fromAObject\" : {\n" +
+                    "        \"aFromB\" : 45,\n" +
+                    "        \"strFromC\" : Hi, I'm from class \"C\"\n" +
+                    "    },\n" +
+                    "\n" +
                     "    \"array\" : [ \n" +
                     "        \"5\",\n" +
                     "        \"1\",\n" +
@@ -24,16 +29,14 @@ public class JSONFormatterTest {
                     "\n" +
                     "    \"b\" : Hello,\n" +
                     "\n" +
-                    "    \"date\" : 13.04.2018,\n" +
+                    "    \"date\" : 17.04.2018,\n" +
                     "\n" +
                     "    \"integerList\" : [ \n" +
                     "        \"5\",\n" +
                     "        \"15\",\n" +
                     "        \"45\"\n" +
-                    "    ],\n" +
-                    "\n" +
-                    "    \"aFROMB\" : 45,\n" +
-                    "}",jsonFormatter.marshall(a, A.class));
+                    "    ]\n" +
+                    "}", jsonFormatter.marshall(a));
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }

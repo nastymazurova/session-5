@@ -8,7 +8,8 @@ import java.util.List;
 /**
  * Created by user on 10.04.2018.
  */
-public class A extends B{
+public class A {
+    B fromAObject = new B();
     char[] array = {'5', '1', 'a'};
     int a = 5;
     String b = "Hello";

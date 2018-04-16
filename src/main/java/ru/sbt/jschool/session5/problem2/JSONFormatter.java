@@ -10,7 +10,7 @@ public interface JSONFormatter {
      * @param obj Any object.
      * @return String in JSON format.
      */
-    String marshall(Object obj, Class<?> clazz) throws IllegalAccessException;
+    String marshall(Object obj) throws IllegalAccessException;
 
     /**
      * Add predefined type to formatter.
