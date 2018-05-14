@@ -11,7 +11,7 @@ public class JSONFormatterImpl implements JSONFormatter {
     private Map<Class, JSONTypeFormatter> types = new HashMap<>();
     private List<String> primitiveTypes = new ArrayList<>();
     StringBuilder strOut = new StringBuilder();
-    private int levelCounter = 1;
+    private int levelCounter = 0;
 
     public JSONFormatterImpl() {
         primitiveTypesAdd();
@@ -38,44 +38,65 @@ public class JSONFormatterImpl implements JSONFormatter {
         if (obj == null)
             return "";
         Class c = obj.getClass();
-        strOut.append("{\n");
-        do {
-            Field[] fields = c.getDeclaredFields();
+        strOut.append(JSONTypeFormatter.spaceCount(levelCounter) + "{\n");
+        levelCounter++;
+        if (types.containsKey(obj.getClass())) {
+            strOut.append(JSONTypeFormatter.spaceCount(levelCounter) + "\"" + types.get(obj.getClass()).format(obj, this, levelCounter) + "\"\n");
+        } else {
+            do {
+                Field[] fields = c.getDeclaredFields();
 
-            for (Field f :
-                    fields) {
-                strOut.append(JSONTypeFormatter.spaceCount(levelCounter));
-                if (primitiveTypes.contains(f.getType().toString())) {
-                    strOut.append("\"" + f.getName() + "\"" + " : " + f.get(obj).toString());
-                } else if (types.containsKey(f.getType())) {
-                    strOut.append("\"" + f.getName() + "\"" + " : " + types.get(f.getType()).format(f.get(obj), this, levelCounter));
-                } else if (f.getType().isArray()) {
-                    strOut.append("\"" + f.getName() + "\"" + " : " + types.get(Array.class).format(f.get(obj), this, levelCounter));
-                } else if (f.get(obj) instanceof Collection) {
+                for (int i = 0; i < fields.length; i++) {
+                    strOut.append(JSONTypeFormatter.spaceCount(levelCounter));
+                    if (primitiveTypes.contains(fields[i].getType().toString())) {
+                        strOut.append("\"" + fields[i].getName() + "\"" + " : " + fields[i].get(obj).toString());
+                    } else if (types.containsKey(fields[i].getType())) {
+                        strOut.append("\"" + fields[i].getName() + "\"" + " : " + types.get(fields[i].getType()).format(fields[i].get(obj), this, levelCounter));
+                    } else if (fields[i].getType().isArray()) {
+                        if (!fields[i].get(obj).getClass().getComponentType().isPrimitive()) {
+                            strOut.append("\"" + fields[i].getName() + "\"" + " : ");
+                            notPrimitiveArrayFormatter(fields[i], obj);
+                        } else {
+                            strOut.append("\"" + fields[i].getName() + "\"" + " : " + types.get(Array.class).format(fields[i].get(obj), this, levelCounter));
+                        }
+                    } else if (fields[i].get(obj) instanceof Collection) {
 
-                    strOut.append("\"" + f.getName() + "\"" + " : " + types.get(Collection.class).format(f.get(obj), this, levelCounter));
+                        strOut.append("\"" + fields[i].getName() + "\"" + " : " + types.get(Collection.class).format(fields[i].get(obj), this, levelCounter));
 
-                } else if (c != Object.class) {
-                    strOut.append("\"" + f.getName() + "\" : ");
-                    levelCounter++;
-                    marshall(f.get(obj));
-                    levelCounter--;
-                } else {
-                    strOut.append("\"" + f.getName() + "\"" + " : " + types.get(Object.class).format(f.get(obj), this, levelCounter));
+                    } else if (c != Object.class) {
+                        strOut.append("\"" + fields[i].getName() + "\" : " + "\n");
+                        marshall(fields[i].get(obj));
+                    } else {
+                        strOut.append("\"" + fields[i].getName() + "\"" + " : " + types.get(Object.class).format(fields[i].get(obj), this, levelCounter));
+                    }
+                    if (i != fields.length - 1) {
+                        strOut.append(",\n");
+                    } else {
+                        strOut.append("\n");
+                    }
                 }
-                strOut.append(",\n\n");
-            }
+                c = c.getSuperclass();
+            } while (c != Object.class);
+        }
 
-            strOut.deleteCharAt(strOut.length() - 2);
-            //levelCounter--;
-
-            c = c.getSuperclass();
-        } while (c != Object.class);
-
-        strOut.deleteCharAt(strOut.length()-2);
-        strOut.append(JSONTypeFormatter.spaceCount(levelCounter-1) + '}');
-        //strOut.append('}');
+        levelCounter--;
+        strOut.append(JSONTypeFormatter.spaceCount(levelCounter) + "}");
         return strOut.toString();
+    }
+
+    private void notPrimitiveArrayFormatter(Field f, Object obj) throws IllegalAccessException {
+        strOut.append("[\n");
+        levelCounter++;
+        for (int i = 0; i < Array.getLength(f.get(obj)); i++) {
+            marshall(Array.get(f.get(obj), i));
+            if (i != Array.getLength(f.get(obj)) - 1) {
+                strOut.append(",\n");
+            } else {
+                strOut.append("\n");
+            }
+        }
+        levelCounter--;
+        strOut.append(JSONTypeFormatter.spaceCount(levelCounter) + "]");
     }
 
     @Override
